@@ -66,7 +66,6 @@ var (
 	hostname    string
 	community   string
 	port        uint
-	logsFlag    bool
 	versionFlag bool
 
 	version = "0.0.0"
@@ -78,7 +77,6 @@ func init() {
 	flag.StringVar(&hostname, "host", "localhost", "hostname or ip address")
 	flag.StringVar(&community, "community", "public", "community string for snmp")
 	flag.UintVar(&port, "port", 161, "port number")
-	flag.BoolVar(&logsFlag, "logs", false, "enable logs")
 	flag.BoolVar(&versionFlag, "version", false, "output version")
 }
 
@@ -103,17 +101,17 @@ func main() {
 }
 
 //Flag config
-func flagConfig(){
+func flagConfig() {
 	appString := fmt.Sprintf("sys-status version %s %s", version, commit)
 
-	flag.Usage = func() {
+	flag.Usage = func() { //help flag
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n\nUsage: sys-status [options]\n", appString)
 		flag.PrintDefaults()
 	}
 
 	flag.Parse()
 
-	if versionFlag {
+	if versionFlag { //version flag
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n", appString)
 		os.Exit(2)
 	}
@@ -129,13 +127,13 @@ func parserVariable(v g.SnmpPDU) big.Int {
 //Obtain cpu statistic
 func getCpu() {
 	cpuInfoArr := []string{OIDS["ssCpuIdle"]}
-	result, err := g.Default.Get(cpuInfoArr) // Get() accepts up to g.MAX_OIDS
+	result, err := g.Default.Get(cpuInfoArr) // // Send snmp get and retrieve values up to g.MAX_OIDS
 	if err != nil {
 		log.Fatalf("Get() err: %v", err)
 	}
 
 	sysInfo = systemInfo{
-		cpu: cpuInfo{
+		cpu: cpuInfo{ //parse variable and populate cpu struct
 			ssCpuIdle: parserVariable(result.Variables[0]),
 		},
 		memory: sysInfo.memory,
@@ -145,13 +143,13 @@ func getCpu() {
 //Obtain memory statistic
 func getMem() {
 	memInfoArr := []string{OIDS["memTotalReal"], OIDS["memAvailReal"]}
-	result, err := g.Default.Get(memInfoArr) // Get() accepts up to g.MAX_OIDS
+	result, err := g.Default.Get(memInfoArr) // Send snmp get and retrieve values up to g.MAX_OIDS
 	if err != nil {
 		log.Fatalf("Get() err: %v", err)
 	}
 
 	sysInfo = systemInfo{
-		memory: memInfo{
+		memory: memInfo{ //parse variable and populate memory struct
 			memTotalReal: parserVariable(result.Variables[0]),
 			memAvailReal: parserVariable(result.Variables[1]),
 		},
@@ -160,14 +158,14 @@ func getMem() {
 
 //print info about cpu and ram
 func printStats() {
-	cpuLoad := new(big.Int).Sub(big.NewInt(100), &sysInfo.cpu.ssCpuIdle)
+	cpuLoad := new(big.Int).Sub(big.NewInt(100), &sysInfo.cpu.ssCpuIdle) //Max load (100) - IdleLoad
 
 	KBtoGB := big.NewFloat(float64(1024 * 1024)) //Used for conversion from KB to GB
 	memAvailGB := new(big.Float).Quo(bIntToBFloat(sysInfo.memory.memAvailReal), KBtoGB)
 	memTotalGB := new(big.Float).Quo(bIntToBFloat(sysInfo.memory.memTotalReal), KBtoGB)
 
 	fmt.Printf("Memory available: %.2f/%.2f GB\n", memAvailGB, memTotalGB)
-	fmt.Printf("CPU usage:        %d%s", cpuLoad, "%")
+	fmt.Printf("CPU usage:        %d%s\n", cpuLoad, "%")
 }
 
 //bigint to bigfloat
