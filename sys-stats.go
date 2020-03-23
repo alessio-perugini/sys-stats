@@ -1,7 +1,5 @@
 package main
 
-
-//TODO aggiungere flag, commentare e add readme
 import (
 	"flag"
 	"fmt"
@@ -85,6 +83,27 @@ func init() {
 }
 
 func main() {
+	flagConfig()
+
+	//snmp config
+	g.Default.Target = hostname
+	g.Default.Community = community
+	g.Default.Port = uint16(port)
+
+	err := g.Default.Connect() //Open snmp connection
+	if err != nil {
+		log.Fatalf("Connect() err: %v", err)
+	}
+
+	defer g.Default.Conn.Close() //Close snmp connection
+
+	getMem()
+	getCpu()
+	printStats()
+}
+
+//Flag config
+func flagConfig(){
 	appString := fmt.Sprintf("sys-status version %s %s", version, commit)
 
 	flag.Usage = func() {
@@ -100,27 +119,14 @@ func main() {
 	}
 
 	fmt.Printf("%s\n", appString)
-
-	g.Default.Target = hostname
-	g.Default.Community = community
-	g.Default.Port = uint16(port)
-
-	err := g.Default.Connect()
-	if err != nil {
-		log.Fatalf("Connect() err: %v", err)
-	}
-
-	defer g.Default.Conn.Close()
-
-	getMem()
-	getCpu()
-	printStats()
 }
 
+//Parse variable of snmp lib to bigint
 func parserVariable(v g.SnmpPDU) big.Int {
 	return *g.ToBigInt(v.Value)
 }
 
+//Obtain cpu statistic
 func getCpu() {
 	cpuInfoArr := []string{OIDS["ssCpuIdle"]}
 	result, err := g.Default.Get(cpuInfoArr) // Get() accepts up to g.MAX_OIDS
@@ -136,6 +142,7 @@ func getCpu() {
 	}
 }
 
+//Obtain memory statistic
 func getMem() {
 	memInfoArr := []string{OIDS["memTotalReal"], OIDS["memAvailReal"]}
 	result, err := g.Default.Get(memInfoArr) // Get() accepts up to g.MAX_OIDS
@@ -151,10 +158,7 @@ func getMem() {
 	}
 }
 
-func getDisk() {
-
-}
-
+//print info about cpu and ram
 func printStats() {
 	cpuLoad := new(big.Int).Sub(big.NewInt(100), &sysInfo.cpu.ssCpuIdle)
 
