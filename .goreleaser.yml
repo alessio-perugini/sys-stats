@@ -1,9 +1,10 @@
+project_name: sys-stats
 
 before:
   hooks:
     - go mod tidy
 builds:
-  - main: ./main.go
+  - main: ./sys-stats.go
     env:
       - CGO_ENABLED=0
     goos:
@@ -16,9 +17,6 @@ builds:
       - arm64
       - arm
       - ppc64le
-    ignore:
-      - goos: linux
-        goarch: amd64
     ldflags:
       - -s -w -X main.version={{.Version}} -X main.commit={{.ShortCommit}}
 

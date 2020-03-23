@@ -11,7 +11,7 @@ import (
 	"os"
 )
 
-//Usefull NET-SNMP-EXTEND-MIB oids
+//Useful NET-SNMP-EXTEND-MIB oids
 var OIDS = map[string]string{
 	//UCD-SNMP-MIB
 	"ssIndex":           ".1.3.6.1.4.1.2021.11.1.0",
