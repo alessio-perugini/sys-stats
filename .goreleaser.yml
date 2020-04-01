@@ -30,5 +30,5 @@ release:
   draft: true
   prerelease: true
 
-env_files:
-  github_token: .env
+#env_files:
+#  github_token: .env
