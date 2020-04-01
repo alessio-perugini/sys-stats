@@ -7,6 +7,7 @@ import (
 	"log"
 	"math/big"
 	"os"
+	"time"
 )
 
 //Useful NET-SNMP-EXTEND-MIB oids
@@ -67,6 +68,7 @@ var (
 	community   string
 	port        uint
 	versionFlag bool
+	interval    string
 
 	version = "0.0.0"
 	commit  = "commithash"
@@ -77,11 +79,13 @@ func init() {
 	flag.StringVar(&hostname, "host", "localhost", "hostname or ip address")
 	flag.StringVar(&community, "community", "public", "community string for snmp")
 	flag.UintVar(&port, "port", 161, "port number")
+	flag.StringVar(&interval, "interval", "5s", "interval in seconds before send another snmp request")
 	flag.BoolVar(&versionFlag, "version", false, "output version")
 }
 
 func main() {
 	flagConfig()
+	maxTime, _ := time.ParseDuration(interval)
 
 	//snmp config
 	g.Default.Target = hostname
@@ -95,9 +99,29 @@ func main() {
 
 	defer g.Default.Conn.Close() //Close snmp connection
 
-	getMem()
-	getCpu()
-	printStats()
+	for {
+		tStart := time.Now()
+
+		getMem()
+		if isMaxTimeExpired(tStart, maxTime) {
+			continue
+		}
+
+		getCpu()
+		if isMaxTimeExpired(tStart, maxTime) {
+			continue
+		}
+
+		printStats()
+
+		timeToSleep := maxTime - time.Since(tStart)
+		time.Sleep(timeToSleep)
+	}
+}
+
+func isMaxTimeExpired(start time.Time, maxDuration time.Duration) bool {
+	elapsedTime := time.Since(start)
+	return elapsedTime > maxDuration
 }
 
 //Flag config
@@ -113,6 +137,14 @@ func flagConfig() {
 
 	if versionFlag { //version flag
 		fmt.Fprintf(flag.CommandLine.Output(), "%s\n", appString)
+		os.Exit(2)
+	}
+
+	if v, err := time.ParseDuration(interval); err != nil {
+		fmt.Println("Invalid interval format.")
+		os.Exit(2)
+	} else if v.Seconds() <= 0 {
+		fmt.Println("Interval too short it must be at least 1 second long")
 		os.Exit(2)
 	}
 

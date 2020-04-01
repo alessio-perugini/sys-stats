@@ -13,12 +13,13 @@ $ go build sys-stats.go
 ```
 ## How to use
 
-```sys-status -community [community] -host [host] -port [snmp_port]```
+```sys-status -community [community] -host [host] -port [snmp_port] -interval [interval]```
 
 Default values:
- - community: public
- - host: 127.0.0.1
- - port 161
+ - community: `public`
+ - host: `127.0.0.1`
+ - port: `161`
+ - interval: `5s`
 
 ## Options
 
