@@ -24,12 +24,15 @@ Default values:
 ## Options
 
 Type `$ sys-status -help`
+
 ```
 Usage: sys-status [options]
   -community string
         community string for snmp (default "public")
   -host string
         hostname or ip address (default "localhost")
+  -interval string
+        interval in seconds before send another snmp request (default "5s")
   -port uint
         port number (default 161)
   -version
